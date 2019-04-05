@@ -2,7 +2,14 @@
 # Statistical tests to contrast allele frequency data -
 # -----------------------------------------------------
 
-cmh.test <- function(A0, a0, At, at, min.cov = 1, max.cov = 1, min.cnt = 1, log = FALSE) {
+cmh.test <- function(A0, a0, At, at, min.cov = 1, max.cov = 1, min.cnt = 1, log = FALSE, RetVal = 0) {
+  
+  # make sure RetVal is one of the allowed values
+  if(!RetVal==0 && !RetVal==1 && !RetVal==2){
+    stop("(", RetVal, ") is not a valid choice for RetVal.
+         RetVal needs to be 0 (p-value) or 1 (test statistic) or 2 (test statistic an p-value).")
+  }
+  
   # make sure that dimensions of A0, a0, At and at are identical
   if(!identical(dim(A0 <- as.matrix(A0)), dim(a0 <- as.matrix(a0))) ||
      !identical(dim(A0), dim(At <- as.matrix(At))) ||
@@ -45,10 +52,36 @@ cmh.test <- function(A0, a0, At, at, min.cov = 1, max.cov = 1, min.cnt = 1, log 
 
   # return p-values according to chi-squared distribution
   p.value <- pchisq(unname(CMH.chi), df=1, lower.tail=FALSE)
-  return(if(log) -log10(p.value) else p.value)
+  
+  if(log){
+    p.value <- -log10(p.value)
+  }  
+  
+  res <- p.value
+  if(!RetVal==0){
+    if(RetVal==1){
+      res <- unname(CMH.chi) 
+    }else if(RetVal==2){
+      res <- cbind(unname(CMH.chi),p.value) 
+      if (log){
+        colnames(res) <- c("test_statistic", "log.p.value")
+      } else {
+        colnames(res) <- c("test_statistic", "p.value")
+      }
+    }
+  }
+  
+  return(res)
 }
 
-chi.sq.test <- function(A0, a0, At = NULL, at = NULL, p0 = 0.5, min.cov = 1, max.cov = 1, min.cnt = 1, log = FALSE) {
+chi.sq.test <- function(A0, a0, At = NULL, at = NULL, p0 = 0.5, min.cov = 1, max.cov = 1, min.cnt = 1, log = FALSE, RetVal = 0) {
+  
+  # make sure RetVal is one of the allowed values
+  if(!RetVal==0 && !RetVal==1 && !RetVal==2){
+    stop("(", RetVal, ") is not a valid choice for RetVal.
+         RetVal needs to be 0 (p-value) or 1 (test statistic) or 2 (test statistic an p-value).")
+  }
+  
   # make sure that lengths of A0 and a0 are identical
   if(!identical(length(A0 <- as.numeric(A0)), length(a0 <- as.numeric(a0)))) {
     stop("Lengths of 'A0' (", length(A0), ") and 'a0' (", length(a0), ") are not identical.")
@@ -94,7 +127,26 @@ chi.sq.test <- function(A0, a0, At = NULL, at = NULL, p0 = 0.5, min.cov = 1, max
     x <- (abs(A0*at-a0*At)-n/2)^2*n / ((A0+a0)*(At+at)*(A0+At)*(a0+at))
     # return p-values according to chi-squared distribution
     p.value <- pchisq(x, df=1, lower.tail=FALSE)
-    return(if(log) -log10(p.value) else p.value)
+    
+    if(log){
+      p.value <- -log10(p.value)
+    }  
+    
+    res <- p.value
+    if(!RetVal==0){
+      if(RetVal==1){
+        res <- x 
+      }else if(RetVal==2){
+        res <- cbind(x,p.value) 
+        if (log){
+          colnames(res) <- c("test_statistic", "log.p.value")
+        } else {
+          colnames(res) <- c("test_statistic", "p.value")
+        }
+      }
+    }
+    
+    return(res)
 
     # otherwise perform a GOODNESS-OF-FIT TEST (assuming 'A0' to occur at a relative frequency of 'p0')
   } else {
@@ -117,6 +169,25 @@ chi.sq.test <- function(A0, a0, At = NULL, at = NULL, p0 = 0.5, min.cov = 1, max
     x <- (A0-p0*n)^2 / (p0*(1-p0)*n)
     # return p-values according to chi-squared distribution
     p.value <- pchisq(x, df=1, lower.tail=FALSE)
-    return(if(log) -log10(p.value) else p.value)
+    
+    if(log){
+      p.value <- -log10(p.value)
+    }  
+    
+    res <- p.value
+    if(!RetVal==0){
+      if(RetVal==1){
+        res <- x 
+      }else if(RetVal==2){
+        res <- cbind(x,p.value) 
+        if (log){
+          colnames(res) <- c("test_statistic", "log.p.value")
+        } else {
+          colnames(res) <- c("test_statistic", "p.value")
+        }
+      }
+    }
+    
+    return(res)
   }
 }
